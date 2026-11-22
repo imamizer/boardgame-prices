@@ -1,10 +1,10 @@
-import {DEFAULT_FILTERS,LANGUAGE_LABELS,STOCK_LABELS,decorate,filterCatalogue,minor,readState,safeUrl,stateSearch,validateCatalog} from './catalogue.mjs';
+import {DEFAULT_FILTERS,LANGUAGE_LABELS,STOCK_LABELS,decorate,feedEvents,filterCatalogue,minor,readState,safeUrl,stateSearch,validateCatalog} from './catalogue.mjs';
 const $=id=>document.getElementById(id);
 const money=new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY',maximumFractionDigits:2});
 const time=new Intl.DateTimeFormat('tr-TR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Istanbul'});
 const shortDate=new Intl.DateTimeFormat('tr-TR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Istanbul'});
 const palette=[['#eaf1f6','#52758d'],['#f1edf7','#826593'],['#edf4ee','#63846b'],['#faf0e8','#b37c50']];
-let data=null,state={...DEFAULT_FILTERS,stores:[],view:'home'};const pageSize=24;const feedLimits={new_product:12,price_down:12};
+let data=null,state={...DEFAULT_FILTERS,stores:[],view:'home'};const pageSize=24;const feedLimits={new_product:12,price_down:12,unavailable:12};
 function element(tag,className,text){const e=document.createElement(tag);if(className)e.className=className;if(text!==undefined)e.textContent=text;return e;}
 function formatPrice(value){return value===null?'Fiyat belirtilmemiş':money.format(value/100);}
 function dateText(value,short=false){const stamp=Date.parse(value);return Number.isFinite(stamp)?(short?shortDate:time).format(stamp):'Kontrol zamanı bilinmiyor';}
@@ -25,7 +25,7 @@ function eventCard(event){
   const card=element('article','feed-card');
   const body=element('div','feed-main');const title=element('div','feed-title-line');
   title.append(element('h3','card-title',event.name),badge(event.language));
-  const info=element('p','card-meta',event.store_name);const stock=element('span','small-stock'+(event.availability==='in_stock'?'':' unavailable'),STOCK_LABELS[event.availability]||'Stok belirtilmemiş');
+  const info=element('p','card-meta',event.store_name);const stock=element('span','small-stock'+(event.availability==='in_stock'&&event.kind!=='removed_from_listing'?'':' unavailable'),event.kind==='removed_from_listing'?'Listeden kaldırıldı':STOCK_LABELS[event.availability]||'Stok belirtilmemiş');
   info.append(document.createTextNode(' · '),stock);
   const bottom=element('div','card-bottom');const stamp=element('time','',dateText(event.detected_at,true));stamp.dateTime=event.detected_at;
   bottom.append(stamp,link('Mağazada incele',event.url));body.append(title,info,bottom);
@@ -33,14 +33,16 @@ function eventCard(event){
   if(event.kind==='price_down'&&event.old_price_minor>0){
     const percent=Math.round((event.old_price_minor-event.price_minor)/event.old_price_minor*100);
     price.append(element('span','discount-badge',`%${percent} düşüş`),element('span','old-price',formatPrice(event.old_price_minor)));
+  }else if(['stock_out','removed_from_listing'].includes(event.kind)){
+    price.append(element('span','unavailable-badge',event.kind==='removed_from_listing'?'Listeden kaldırıldı':'Stok tükendi'),element('span','last-price-label','Son görülen fiyat'));
   }else price.append(element('span','new-badge','Yeni eklendi'));
   price.append(element('strong','card-price',formatPrice(event.price_minor)));
   card.append(body,price);return card;
 }
 
 function renderFeed(){
-  for(const [kind,target,count,empty] of [['new_product','new-products','new-count','Bu kontrollerde yeni bir ürün bulunmadı.'],['price_down','price-drops','deal-count','Bu kontrollerde fiyat düşüşü bulunmadı.']]){
-    const events=data.updates.filter(e=>e.kind===kind).sort((a,b)=>Date.parse(b.detected_at)-Date.parse(a.detected_at));$(count).textContent=events.length;$(target).replaceChildren();
+  for(const [kind,target,count,empty] of [['new_product','new-products','new-count','Bu kontrollerde yeni bir ürün bulunmadı.'],['price_down','price-drops','deal-count','Bu kontrollerde fiyat düşüşü bulunmadı.'],['unavailable','unavailable-products','unavailable-count','Bu kontrollerde tükenen veya kaldırılan ilan bulunmadı.']]){
+    const events=feedEvents(data.updates,kind);$(count).textContent=events.length;$(target).replaceChildren();
     if(events.length){for(const event of events.slice(0,feedLimits[kind]))$(target).append(eventCard(event));if(events.length>feedLimits[kind]){const more=element('button','feed-more','Daha fazla göster');more.type='button';more.addEventListener('click',()=>{feedLimits[kind]+=12;renderFeed();});$(target).append(more);}}
     else{const box=element('div','empty-feed');const content=element('div');content.append(element('strong','',empty),element('p','','Tüm oyunları arayabilir veya kataloğu mağazalara göre filtreleyebilirsin.'));box.append(element('span','empty-symbol','◇'),content);$(target).append(box);}
   }

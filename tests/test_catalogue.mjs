@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {decorate,filterCatalogue,fold,minor,readState,safeUrl,stateSearch,validateCatalog} from '../catalogue.mjs';
+import {decorate,feedEvents,filterCatalogue,fold,minor,readState,safeUrl,stateSearch,validateCatalog} from '../catalogue.mjs';
 const stores=[{code:'a',name:'A'},{code:'b',name:'B'}];
 const rows=[{edition_id:1,name:'İstanbul Alhambra',language:'TR',currency:'TRY',product_type:'game',a_price:'100.00',a_stock:'in_stock',a_url:'https://a.example/1',b_price:'50.00',b_stock:'out_of_stock',b_url:'https://b.example/1'},
 {edition_id:2,name:'İstanbul Alhambra',language:'EN',currency:'TRY',product_type:'game',a_price:'80.00',a_stock:'out_of_stock',a_url:'https://a.example/2'},
@@ -13,3 +13,14 @@ test('price parsing rejects missing and invalid values',()=>{assert.equal(minor(
 test('external URLs cannot execute scripts',()=>{assert.equal(safeUrl('javascript:alert(1)'),null);assert.equal(safeUrl('data:text/html,hello'),null);assert.equal(safeUrl('https://a.example/'), 'https://a.example/');});
 test('URL state round-trips and drops unsupported values',()=>{const state=readState('?q=İstanbul&lang=TR&stores=a,evil&stock=0&sort=price_asc&view=catalog',['a']);assert.deepEqual(state.stores,['a']);assert.equal(state.inStock,false);assert.equal(readState('?'+stateSearch(state),['a']).query,'İstanbul');assert.equal(readState('?sort=evil&min=nan',[]).sort,'name');});
 test('catalogue validation rejects duplicate editions and unsupported events',()=>{const data={rows,stores,updates:[],metadata:{schema_version:1,exported_at:'2026-11-23T06:00:00Z'}};assert.equal(validateCatalog(data),data);assert.throws(()=>validateCatalog({...data,rows:[rows[0],rows[0]]}));assert.throws(()=>validateCatalog({...data,updates:[{kind:'password'}]}));});
+
+test('stock-out and removed listings form a dedicated feed without duplicate listings',()=>{
+  const base={store:'a',store_name:'A',name:'Game',url:'https://a.example/1',detected_at:'2026-11-23T06:00:00Z',product_id:1};
+  const updates=[{...base,kind:'stock_out'},{...base,kind:'removed_from_listing'},{...base,kind:'new_product',product_id:2}];
+  const data={rows,stores,updates,metadata:{schema_version:1,exported_at:base.detected_at}};
+  assert.equal(validateCatalog(data),data);
+  assert.equal(feedEvents(updates,'unavailable').length,1);
+  assert.equal(feedEvents(updates,'unavailable')[0].kind,'removed_from_listing');
+  assert.equal(feedEvents(updates,'new_product').length,1);
+  assert.equal(feedEvents(updates,'price_down').length,0);
+});

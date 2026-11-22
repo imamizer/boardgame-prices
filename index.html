@@ -16,7 +16,7 @@
 <main id="content" class="shell">
   <section class="hero" aria-labelledby="hero-title">
     <h1 id="hero-title">Oyununu bul.<br><span>Fiyatını karşılaştır.</span></h1>
-    <p class="hero-copy">Yeni kutular, düşen fiyatlar ve mağaza teklifleri. Hepsi tek yerde.</p>
+    <p class="hero-copy">Yeni kutular, düşen fiyatlar, tükenenler ve mağaza teklifleri. Hepsi tek yerde.</p>
     <form id="search-form" role="search" class="search-box"><span class="search-icon" aria-hidden="true"></span><label class="sr-only" for="search">Oyun adı ara</label><input id="search" type="search" placeholder="Bir oyun ara… Alhambra, Wingspan, Dune" autocomplete="off"><button type="submit">Oyunu bul</button></form>
     <div id="summary" class="summary" aria-live="polite"><span>Katalog yükleniyor…</span></div>
   </section>
@@ -26,6 +26,7 @@
     <div class="feeds-layout">
     <section class="feed-section" aria-labelledby="new-title"><div class="section-heading"><div><div class="kicker">KATALOĞA KATILANLAR</div><h2 id="new-title">Yeni eklenenler <span id="new-count" class="count-badge">0</span></h2></div><span class="section-note">Son başarılı kontrollerden</span></div><div id="new-products" class="feed-grid"></div></section>
     <section class="feed-section" aria-labelledby="deals-title"><div class="section-heading"><div><div class="kicker green-text">DAHA İYİ BİR TEKLİF</div><h2 id="deals-title">Fiyatı düşenler <span id="deal-count" class="count-badge">0</span></h2></div><span class="section-note">Eski ve yeni fiyatı birlikte gör</span></div><div id="price-drops" class="feed-grid"></div></section>
+    <section class="feed-section" aria-labelledby="unavailable-title"><div class="section-heading"><div><div class="kicker red-text">SON STOK DEĞİŞİKLİKLERİ</div><h2 id="unavailable-title">Tükenenler <span id="unavailable-count" class="count-badge">0</span></h2></div><span class="section-note">Stoku tükenen veya listeden kaldırılan ilanlar</span></div><div id="unavailable-products" class="feed-grid"></div></section>
     </div>
     <div class="catalog-banner"><div><h2>Aklında belirli bir oyun mu var?</h2><p>Tüm oyunları dil, stok ve mağazaya göre filtrele.</p></div><button id="browse-all" class="primary" type="button">Tüm kataloğu keşfet</button></div>
   </section>
@@ -47,7 +48,7 @@
   </section>
   <div id="status" class="status-bar" role="status"><span class="clock-icon" aria-hidden="true">◷</span><span id="status-text">Son kontrol bilgisi alınıyor.</span><button id="stores-toggle" type="button" aria-expanded="false" aria-controls="store-status">Mağaza durumları</button></div>
   <div id="store-status" class="store-status" hidden></div>
-  <footer><div class="footer-brand">KutuRadarı <span>· Günlük bir oyun molası</span></div><p>Fiyatlara kargo dahil değildir. Satın almadan önce mağazadaki fiyat ve stok durumunu kontrol et.</p><p>Farklı dil sürümleri ayrı gösterilir. Yeni eklenenler, ilk kez tespit edilen mağaza ilanlarıdır; oyunun çıkış tarihi anlamına gelmez.</p><p>Listelenmesini istediğiniz siteleri <a href="mailto:imamizer@gmail.com">imamizer@gmail.com</a> adresine bildirebilirsiniz.</p></footer>
+  <footer><div class="footer-brand">KutuRadarı <span>· Günlük bir oyun molası</span></div><p>Fiyatlara kargo dahil değildir. Satın almadan önce mağazadaki fiyat ve stok durumunu kontrol et.</p><p>Farklı dil sürümleri ayrı gösterilir. Yeni eklenenler, ilk kez tespit edilen mağaza ilanlarıdır; oyunun çıkış tarihi anlamına gelmez.</p><p>Tükenenler mağaza bazındaki son değişiklikleri gösterir; oyun başka mağazalarda stokta olabilir. Listeden kaldırılma, stok tükenmesinden ayrı işaretlenir.</p><p>Listelenmesini istediğiniz siteleri <a href="mailto:imamizer@gmail.com">imamizer@gmail.com</a> adresine bildirebilirsiniz.</p></footer>
 </main>
 <dialog id="details" aria-labelledby="dialog-title"><div class="dialog-header"><div><span id="dialog-language" class="language-badge"></span><h2 id="dialog-title"></h2></div><button id="close-dialog" class="icon-button" aria-label="Karşılaştırmayı kapat" type="button">×</button></div><p class="dialog-help">Aynı dil sürümünün mağaza teklifleri. Kargo dahil değildir.</p><div class="offers-scroll"><table class="offers-table"><thead><tr><th scope="col">Mağaza</th><th scope="col">Stok</th><th scope="col">Fiyat</th><th scope="col"><span class="sr-only">Ürün bağlantısı</span></th></tr></thead><tbody id="offer-rows"></tbody></table></div><p class="dialog-foot">Stokta olmayan teklifleri de inceleyebilirsin. En düşük fiyat yalnızca stoktaki teklifler arasında hesaplanır.</p></dialog>
 <script type="module" src="app.js"></script>

@@ -31,3 +31,15 @@
 .offer-stock.available{color:#187344;font-weight:700}.offer-stock.unavailable{color:#9b4b4b;text-decoration:line-through;text-decoration-thickness:1px}.offer-stock.pending{color:#7a6a42}
 footer a{color:#416e80;text-underline-offset:3px}
 @media(max-width:700px){.hero{margin:19px auto 24px}.feeds-layout{grid-template-columns:1fr;gap:18px;margin-top:22px}.feeds-layout .feed-section{padding:20px}.feed-title-line .card-title{font-size:.9rem}.feed-price .card-price{font-size:1.05rem}.feeds-layout .card-bottom{gap:7px 13px}.status-bar{margin-top:24px}.feeds-layout .empty-feed{min-height:120px}.feed-price{max-width:120px}}
+
+/* Three parallel update lists; stack them when cards become too narrow. */
+.feeds-layout{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.feeds-layout .feed-section{padding:20px}
+.feeds-layout h2{font-size:1.35rem;gap:8px}
+.feeds-layout .feed-card{grid-template-columns:minmax(0,1fr);gap:10px}
+.feed-price{max-width:none;align-items:start;flex-direction:row;flex-wrap:wrap;gap:6px 10px;justify-content:flex-start}
+.feed-price .card-price{margin-left:auto}.feed-price .old-price{align-self:center}
+.unavailable-badge{font-size:.75rem;font-weight:700;color:#924a4a;background:#f9eeee;border-radius:4px;padding:3px 7px}
+.red-text{color:#924a4a}.last-price-label{font-size:.75rem;color:var(--muted);align-self:center}
+@media(max-width:1000px){.feeds-layout{grid-template-columns:1fr}.feeds-layout .feed-card{grid-template-columns:minmax(0,1fr) auto}.feed-price{max-width:190px;flex-direction:column;align-items:end}.feed-price .card-price{margin-left:0}}
+@media(max-width:450px){.feeds-layout .feed-card{grid-template-columns:minmax(0,1fr)}.feed-price{max-width:none;flex-direction:row;align-items:center}.feed-price .card-price{margin-left:auto}}

@@ -58,6 +58,16 @@ export function validateCatalog(data){
   const ids=new Set();const codes=new Set();
   for(const s of data.stores){if(!/^[a-z][a-z0-9_]*$/.test(s.code)||typeof s.name!=='string'||codes.has(s.code))throw Error('Invalid store');codes.add(s.code);}
   for(const row of data.rows){if(!Number.isSafeInteger(row.edition_id)||!row.name||ids.has(row.edition_id)||row.currency!=='TRY')throw Error('Invalid edition');ids.add(row.edition_id);}
-  for(const event of data.updates){if(!['new_product','price_down'].includes(event.kind)||!codes.has(event.store)||!safeUrl(event.url)||!event.name||!Number.isFinite(Date.parse(event.detected_at)))throw Error('Invalid event');}
+  for(const event of data.updates){if(!['new_product','price_down','stock_out','removed_from_listing'].includes(event.kind)||!codes.has(event.store)||!safeUrl(event.url)||!event.name||!Number.isFinite(Date.parse(event.detected_at)))throw Error('Invalid event');}
   return data;
+}
+
+export function feedEvents(updates,group){
+  const kinds=group==='unavailable'?['stock_out','removed_from_listing']:[group];
+  const seen=new Set();
+  return updates.filter(event=>kinds.includes(event.kind)).sort((a,b)=>Date.parse(b.detected_at)-Date.parse(a.detected_at)||Number(b.kind==='removed_from_listing')-Number(a.kind==='removed_from_listing')).filter(event=>{
+    // A disappearing listing can generate both stock and removal events in one run.
+    const key=`${event.store}:${event.product_id}`;
+    if(seen.has(key))return false;seen.add(key);return true;
+  });
 }
