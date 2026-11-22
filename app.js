@@ -22,13 +22,22 @@ function renderStatus(){
   $('store-status').replaceChildren();for(const store of data.stores){const e=element('article');e.append(element('strong','',store.name),element('time','',dateText(store.current_observed_at)));if(store.last_attempt_status!=='success')e.append(element('small','failed','Son deneme başarısız; son başarılı veri gösteriliyor.'));$('store-status').append(e);}
 }
 function eventCard(event){
-  const card=element('article','feed-card');const top=element('div','card-top');const badges=element('div','badge-row');badges.append(badge(event.language));
-  if(event.kind==='price_down'&&event.old_price_minor>0){const percent=Math.round((event.old_price_minor-event.price_minor)/event.old_price_minor*100);badges.append(element('span','discount-badge',`%${percent} düşüş`));}else badges.append(element('span','new-badge','Yeni eklendi'));
-  top.append(mark(event.name,event.product_id),badges);card.append(top,element('h3','card-title',event.name),element('p','card-meta',event.store_name));
-  const prices=element('div','card-price-row');if(event.kind==='price_down')prices.append(element('span','old-price',formatPrice(event.old_price_minor)));prices.append(element('strong','card-price',formatPrice(event.price_minor)));card.append(prices);
-  const bottom=element('div','card-bottom');const stamp=element('time','',dateText(event.detected_at,true));stamp.dateTime=event.detected_at;bottom.append(stamp,link('Mağazada incele',event.url));card.append(bottom);
-  const stock=element('span','small-stock'+(event.availability==='in_stock'?'':' unavailable'),STOCK_LABELS[event.availability]||'Stok belirtilmemiş');stock.style.marginTop='9px';card.append(stock);return card;
+  const card=element('article','feed-card');
+  const body=element('div','feed-main');const title=element('div','feed-title-line');
+  title.append(element('h3','card-title',event.name),badge(event.language));
+  const info=element('p','card-meta',event.store_name);const stock=element('span','small-stock'+(event.availability==='in_stock'?'':' unavailable'),STOCK_LABELS[event.availability]||'Stok belirtilmemiş');
+  info.append(document.createTextNode(' · '),stock);
+  const bottom=element('div','card-bottom');const stamp=element('time','',dateText(event.detected_at,true));stamp.dateTime=event.detected_at;
+  bottom.append(stamp,link('Mağazada incele',event.url));body.append(title,info,bottom);
+  const price=element('div','feed-price');
+  if(event.kind==='price_down'&&event.old_price_minor>0){
+    const percent=Math.round((event.old_price_minor-event.price_minor)/event.old_price_minor*100);
+    price.append(element('span','discount-badge',`%${percent} düşüş`),element('span','old-price',formatPrice(event.old_price_minor)));
+  }else price.append(element('span','new-badge','Yeni eklendi'));
+  price.append(element('strong','card-price',formatPrice(event.price_minor)));
+  card.append(body,price);return card;
 }
+
 function renderFeed(){
   for(const [kind,target,count,empty] of [['new_product','new-products','new-count','Bu kontrollerde yeni bir ürün bulunmadı.'],['price_down','price-drops','deal-count','Bu kontrollerde fiyat düşüşü bulunmadı.']]){
     const events=data.updates.filter(e=>e.kind===kind).sort((a,b)=>Date.parse(b.detected_at)-Date.parse(a.detected_at));$(count).textContent=events.length;$(target).replaceChildren();
@@ -55,7 +64,7 @@ function render(){if(!data)return;$('home').hidden=state.view!=='home';$('catalo
 function openDetails(id){
   const source=data.rows.find(row=>row.edition_id===id);if(!source)return;const row=decorate(source,data.stores);$('dialog-title').textContent=row.name;$('dialog-language').textContent=LANGUAGE_LABELS[row.language]||'Dil belirtilmemiş';$('offer-rows').replaceChildren();
   const offers=[...row.offers].sort((a,b)=>(a.stock!=='in_stock')-(b.stock!=='in_stock')||(a.priceMinor??Infinity)-(b.priceMinor??Infinity));
-  for(const offer of offers){const best=offer.stock==='in_stock'&&offer.priceMinor!==null&&offer.priceMinor===row.low;const tr=element('tr',best?'best':'');const shop=element('td','',offer.storeName);shop.append(element('span','offer-time',dateText(offer.observedAt,true)));const stock=element('td','',STOCK_LABELS[offer.stock]||'Belirtilmemiş');const price=element('td','offer-price',formatPrice(offer.priceMinor));if(best)price.append(element('span','best-label','En düşük fiyat'));const action=element('td');action.append(link('Mağazada aç',offer.url));tr.append(shop,stock,price,action);$('offer-rows').append(tr);}
+  for(const offer of offers){const best=offer.stock==='in_stock'&&offer.priceMinor!==null&&offer.priceMinor===row.low;const tr=element('tr',best?'best':'');const shop=element('td','',offer.storeName);shop.append(element('span','offer-time',dateText(offer.observedAt,true)));const stock=element('td','offer-stock '+(offer.stock==='in_stock'?'available':offer.stock==='out_of_stock'?'unavailable':'pending'),STOCK_LABELS[offer.stock]||'Belirtilmemiş');const price=element('td','offer-price',formatPrice(offer.priceMinor));if(best)price.append(element('span','best-label','En düşük fiyat'));const action=element('td');action.append(link('Mağazada aç',offer.url));tr.append(shop,stock,price,action);$('offer-rows').append(tr);}
   $('details').showModal();
 }
 function updateFilter(key,value){state[key]=value;state.page=1;state.view='catalog';render();}
