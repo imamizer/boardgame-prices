@@ -1,0 +1,15 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {decorate,filterCatalogue,fold,minor,readState,safeUrl,stateSearch,validateCatalog} from '../catalogue.mjs';
+const stores=[{code:'a',name:'A'},{code:'b',name:'B'}];
+const rows=[{edition_id:1,name:'İstanbul Alhambra',language:'TR',currency:'TRY',product_type:'game',a_price:'100.00',a_stock:'in_stock',a_url:'https://a.example/1',b_price:'50.00',b_stock:'out_of_stock',b_url:'https://b.example/1'},
+{edition_id:2,name:'İstanbul Alhambra',language:'EN',currency:'TRY',product_type:'game',a_price:'80.00',a_stock:'out_of_stock',a_url:'https://a.example/2'},
+{edition_id:3,name:'Wingspan',language:'EN',currency:'TRY',product_type:'game',a_price:'120.00',a_stock:'in_stock',a_url:'https://a.example/3'}];
+test('Turkish and English spellings can be searched',()=>{assert.equal(fold('İSTANBUL'),'istanbul');assert.equal(filterCatalogue(rows,stores,{query:'ISTANBUL',inStock:false}).length,2);});
+test('out-of-stock prices never determine cheapest',()=>{const result=decorate(rows[0],stores);assert.equal(result.low,10000);assert.equal(result.cheapest[0].store,'a');});
+test('selected store changes stock filter and comparison',()=>{assert.equal(filterCatalogue(rows,stores,{stores:['b']}).length,0);const result=filterCatalogue(rows,stores,{stores:['b'],inStock:false});assert.equal(result.length,1);assert.equal(result[0].low,null);});
+test('languages remain separate',()=>{const result=filterCatalogue(rows,stores,{language:'EN',inStock:false});assert.deepEqual(result.map(r=>r.edition_id),[2,3]);});
+test('price ranges and descending sort use eligible offers',()=>{assert.deepEqual(filterCatalogue(rows,stores,{min:'110',max:'130'}).map(r=>r.edition_id),[3]);assert.deepEqual(filterCatalogue(rows,stores,{inStock:false,sort:'price_desc'}).map(r=>r.edition_id),[3,1,2]);});
+test('price parsing rejects missing and invalid values',()=>{assert.equal(minor(null),null);assert.equal(minor('1999.92'),199992);assert.equal(minor(-1),null);assert.equal(minor('not a price'),null);});
+test('external URLs cannot execute scripts',()=>{assert.equal(safeUrl('javascript:alert(1)'),null);assert.equal(safeUrl('data:text/html,hello'),null);assert.equal(safeUrl('https://a.example/'), 'https://a.example/');});
+test('URL state round-trips and drops unsupported values',()=>{const state=readState('?q=İstanbul&lang=TR&stores=a,evil&stock=0&sort=price_asc&view=catalog',['a']);assert.deepEqual(state.stores,['a']);assert.equal(state.inStock,false);assert.equal(readState('?'+stateSearch(state),['a']).query,'İstanbul');assert.equal(readState('?sort=evil&min=nan',[]).sort,'name');});
+test('catalogue validation rejects duplicate editions and unsupported events',()=>{const data={rows,stores,updates:[],metadata:{schema_version:1,exported_at:'2026-11-23T06:00:00Z'}};assert.equal(validateCatalog(data),data);assert.throws(()=>validateCatalog({...data,rows:[rows[0],rows[0]]}));assert.throws(()=>validateCatalog({...data,updates:[{kind:'password'}]}));});

@@ -1,0 +1,4 @@
+_site/
+work/
+node_modules/
+data/catalog.json

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Kutu oyunlarını ara, mağaza fiyatlarını karşılaştır, yeni eklenenleri ve fiyatı düşenleri gör.">
+  <meta name="theme-color" content="#172d3b"><title>Kutu Radarı · Oyun ve fiyat takibi</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#content">İçeriğe geç</a>
+<header class="site-header"><div class="shell header-inner">
+  <a href="./" class="brand"><img src="icon.svg" width="34" height="34" alt=""><span>Kutu<span class="brand-light">Radarı</span></span></a>
+  <nav aria-label="Ana menü"><button id="nav-home" class="nav-button active" type="button">Güncellemeler</button><button id="nav-catalog" class="nav-button" type="button">Tüm oyunlar</button></nav>
+  <span class="header-note">Bağımsız oyun kataloğu</span>
+</div></header>
+<main id="content" class="shell">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="eyebrow"><span class="tiny-dice" aria-hidden="true">◇</span> OYUN MASASINA YENİ BİR ŞEYLER</div>
+    <h1 id="hero-title">Oyununu bul.<br><span>Fiyatını karşılaştır.</span></h1>
+    <p class="hero-copy">Yeni kutular, düşen fiyatlar ve mağaza teklifleri. Hepsi tek yerde.</p>
+    <form id="search-form" role="search" class="search-box"><span class="search-icon" aria-hidden="true"></span><label class="sr-only" for="search">Oyun adı ara</label><input id="search" type="search" placeholder="Bir oyun ara… Alhambra, Wingspan, Dune" autocomplete="off"><button type="submit">Oyunu bul</button></form>
+    <div id="summary" class="summary" aria-live="polite"><span>Katalog yükleniyor…</span></div>
+  </section>
+  <div id="status" class="status-bar" role="status"><span class="clock-icon" aria-hidden="true">◷</span><span id="status-text">Son kontrol bilgisi alınıyor.</span><button id="stores-toggle" type="button" aria-expanded="false" aria-controls="store-status">Mağaza durumları</button></div>
+  <div id="store-status" class="store-status" hidden></div>
+  <section id="error" class="error-box" hidden><h2>Katalog yüklenemedi</h2><p>Bağlantını kontrol edip yeniden deneyebilirsin.</p><button id="retry" class="primary" type="button">Yeniden dene</button></section>
+  <div id="loading" class="loading-grid" aria-label="Katalog yükleniyor"><div></div><div></div><div></div></div>
+  <section id="home" hidden>
+    <section class="feed-section" aria-labelledby="new-title"><div class="section-heading"><div><div class="kicker">KATALOĞA KATILANLAR</div><h2 id="new-title">Yeni eklenenler <span id="new-count" class="count-badge">0</span></h2></div><span class="section-note">Son başarılı kontrollerden</span></div><div id="new-products" class="feed-grid"></div></section>
+    <section class="feed-section" aria-labelledby="deals-title"><div class="section-heading"><div><div class="kicker green-text">DAHA İYİ BİR TEKLİF</div><h2 id="deals-title">Fiyatı düşenler <span id="deal-count" class="count-badge">0</span></h2></div><span class="section-note">Eski ve yeni fiyatı birlikte gör</span></div><div id="price-drops" class="feed-grid"></div></section>
+    <div class="catalog-banner"><div><h2>Aklında belirli bir oyun mu var?</h2><p>Tüm oyunları dil, stok ve mağazaya göre filtrele.</p></div><button id="browse-all" class="primary" type="button">Tüm kataloğu keşfet</button></div>
+  </section>
+  <section id="catalog" hidden aria-labelledby="catalog-title">
+    <div class="section-heading"><div><div class="kicker">KENDİ OYUNUNU SEÇ</div><h2 id="catalog-title">Oyun kataloğu</h2></div><span id="result-count" class="section-note" aria-live="polite"></span></div>
+    <div class="catalog-layout"><aside class="filters" aria-label="Katalog filtreleri">
+      <div class="filter-title"><h3>Filtreler</h3><button id="reset" class="text-button" type="button">Temizle</button></div>
+      <label class="check stock-check"><input id="in-stock" type="checkbox" checked><span>Yalnızca stoktakiler</span></label>
+      <label class="field" for="language">Oyun dili<select id="language"><option value="">Tüm diller</option><option value="TR">Türkçe</option><option value="EN">İngilizce</option></select></label>
+      <label class="field" for="type">Ürün türü<select id="type"><option value="">Tüm türler</option><option value="game">Ana oyun</option><option value="expansion">Ek paket</option><option value="bundle">Paket</option><option value="unknown">Türü belirtilmemiş</option></select></label>
+      <fieldset><legend>Fiyat aralığı · TL</legend><div class="price-inputs"><label class="sr-only" for="price-min">En düşük fiyat</label><input id="price-min" type="number" min="0" step="1" placeholder="En az"><span>–</span><label class="sr-only" for="price-max">En yüksek fiyat</label><input id="price-max" type="number" min="0" step="1" placeholder="En çok"></div></fieldset>
+      <fieldset><legend>Mağazalar</legend><div id="store-filters" class="store-filters"></div></fieldset>
+      <p class="filter-help">Fiyat karşılaştırması seçtiğin mağazalardaki stokta olan tekliflerle yapılır.</p>
+    </aside><div class="catalog-results">
+      <div class="result-toolbar"><div id="active-query"></div><label class="sort-label" for="sort">Sırala<select id="sort"><option value="name">Oyun adı · A–Z</option><option value="price_asc">Fiyat · düşükten yükseğe</option><option value="price_desc">Fiyat · yüksekten düşüğe</option><option value="stores">En çok mağazada</option></select></label></div>
+      <div id="products" class="product-grid"></div><div id="no-results" class="empty-state" hidden><span class="empty-symbol" aria-hidden="true">⌕</span><h3>Bu filtrelerle oyun bulunamadı</h3><p>Aramayı kısaltmayı veya filtreleri değiştirmeyi deneyebilirsin.</p><button id="reset-empty" class="text-button" type="button">Filtreleri temizle</button></div>
+      <nav id="pagination" class="pagination" aria-label="Sonuç sayfaları"></nav>
+    </div></div>
+  </section>
+  <footer><div class="footer-brand">KutuRadarı <span>· Günlük bir oyun molası</span></div><p>Fiyatlara kargo dahil değildir. Satın almadan önce mağazadaki fiyat ve stok durumunu kontrol et.</p><p>Farklı dil sürümleri ayrı gösterilir. Yeni eklenenler, ilk kez tespit edilen mağaza ilanlarıdır; oyunun çıkış tarihi anlamına gelmez.</p></footer>
+</main>
+<dialog id="details" aria-labelledby="dialog-title"><div class="dialog-header"><div><span id="dialog-language" class="language-badge"></span><h2 id="dialog-title"></h2></div><button id="close-dialog" class="icon-button" aria-label="Karşılaştırmayı kapat" type="button">×</button></div><p class="dialog-help">Aynı dil sürümünün mağaza teklifleri. Kargo dahil değildir.</p><div class="offers-scroll"><table class="offers-table"><thead><tr><th scope="col">Mağaza</th><th scope="col">Stok</th><th scope="col">Fiyat</th><th scope="col"><span class="sr-only">Ürün bağlantısı</span></th></tr></thead><tbody id="offer-rows"></tbody></table></div><p class="dialog-foot">Stokta olmayan teklifleri de inceleyebilirsin. En düşük fiyat yalnızca stoktaki teklifler arasında hesaplanır.</p></dialog>
+<script type="module" src="app.js"></script>
+</body></html>
