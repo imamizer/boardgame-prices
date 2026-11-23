@@ -71,3 +71,7 @@ export function feedEvents(updates,group){
     if(seen.has(key))return false;seen.add(key);return true;
   });
 }
+
+export function imageSources(item){
+  return [...new Set([item.image_url,...(Array.isArray(item.image_fallback_urls)?item.image_fallback_urls:[])].map(safeUrl).filter(url=>url?.startsWith('https:')))].slice(0,3);
+}

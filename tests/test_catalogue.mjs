@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {decorate,feedEvents,filterCatalogue,fold,minor,readState,safeUrl,stateSearch,validateCatalog} from '../catalogue.mjs';
+import {decorate,feedEvents,filterCatalogue,imageSources,fold,minor,readState,safeUrl,stateSearch,validateCatalog} from '../catalogue.mjs';
 const stores=[{code:'a',name:'A'},{code:'b',name:'B'}];
 const rows=[{edition_id:1,name:'İstanbul Alhambra',language:'TR',currency:'TRY',product_type:'game',a_price:'100.00',a_stock:'in_stock',a_url:'https://a.example/1',b_price:'50.00',b_stock:'out_of_stock',b_url:'https://b.example/1'},
 {edition_id:2,name:'İstanbul Alhambra',language:'EN',currency:'TRY',product_type:'game',a_price:'80.00',a_stock:'out_of_stock',a_url:'https://a.example/2'},
@@ -29,4 +29,9 @@ test('deal feed excludes unavailable offers even in older JSON snapshots',()=>{
   const base={store:'a',product_id:1,kind:'price_down',detected_at:'2026-11-23T06:00:00Z'};
   const result=feedEvents([{...base,availability:'out_of_stock'},{...base,product_id:2,availability:'in_stock'}],'price_down');
   assert.deepEqual(result.map(event=>event.product_id),[2]);
+});
+
+test('image sources reject unsafe/mixed-content URLs and deduplicate fallbacks',()=>{
+  assert.deepEqual(imageSources({image_url:'https://cdn.example/cover.webp',image_fallback_urls:['https://cdn.example/cover.webp','javascript:bad','http://insecure.example/a','https://other.example/cover.webp']}),['https://cdn.example/cover.webp','https://other.example/cover.webp']);
+  assert.deepEqual(imageSources({image_url:'data:image/svg+xml,bad',image_fallback_urls:'invalid'}),[]);
 });

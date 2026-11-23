@@ -1,4 +1,4 @@
-import {DEFAULT_FILTERS,LANGUAGE_LABELS,STOCK_LABELS,decorate,feedEvents,filterCatalogue,minor,readState,safeUrl,stateSearch,validateCatalog} from './catalogue.mjs';
+import {DEFAULT_FILTERS,LANGUAGE_LABELS,STOCK_LABELS,decorate,feedEvents,filterCatalogue,imageSources,minor,readState,safeUrl,stateSearch,validateCatalog} from './catalogue.mjs';
 const $=id=>document.getElementById(id);
 const money=new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY',maximumFractionDigits:2});
 const time=new Intl.DateTimeFormat('tr-TR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Istanbul'});
@@ -9,6 +9,15 @@ function element(tag,className,text){const e=document.createElement(tag);if(clas
 function formatPrice(value){return value===null?'Fiyat belirtilmemiş':money.format(value/100);}
 function dateText(value,short=false){const stamp=Date.parse(value);return Number.isFinite(stamp)?(short?shortDate:time).format(stamp):'Kontrol zamanı bilinmiyor';}
 function mark(name,id){const e=element('div','edition-mark',name.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toLocaleUpperCase('tr-TR'));const p=palette[Math.abs(Number(id)||0)%palette.length];e.style.setProperty('--mark-bg',p[0]);e.style.setProperty('--mark-ink',p[1]);e.setAttribute('aria-hidden','true');return e;}
+function cover(item,className){
+  const frame=element('div','game-cover '+className);const fallback=mark(item.name,item.edition_id||item.product_id);
+  frame.append(fallback);const urls=imageSources(item);if(!urls.length)return frame;
+  const img=element('img');img.alt=item.name+' kutu görseli';img.width=300;img.height=300;
+  img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';fallback.hidden=true;
+  let index=0;
+  img.addEventListener('error',()=>{if(++index<urls.length)img.src=urls[index];else{img.remove();fallback.hidden=false;}});
+  img.src=urls[0];frame.append(img);return frame;
+}
 function badge(language){return element('span','language-badge',LANGUAGE_LABELS[language]||'Dil belirtilmemiş');}
 function link(label,url){const e=element('a','card-link',label);const safe=safeUrl(url);if(safe){e.href=safe;e.target='_blank';e.rel='noopener noreferrer';}return e;}
 function chooseView(view){state.view=view;if(view==='home'){state.query='';$('search').value='';}render();}
@@ -37,7 +46,7 @@ function eventCard(event){
     price.append(element('span','unavailable-badge',event.kind==='removed_from_listing'?'Listeden kaldırıldı':'Stok tükendi'),element('span','last-price-label','Son görülen fiyat'));
   }else price.append(element('span','new-badge','Yeni eklendi'));
   price.append(element('strong','card-price',formatPrice(event.price_minor)));
-  card.append(body,price);return card;
+  card.append(cover(event,'feed-cover'),body,price);return card;
 }
 
 function renderFeed(){
@@ -48,7 +57,7 @@ function renderFeed(){
   }
 }
 function productCard(row){
-  const card=element('article','product-card');const top=element('div','card-top');top.append(mark(row.name,row.edition_id),badge(row.language));
+  const card=element('article','product-card');const top=element('div','card-top');top.append(cover(row,'catalog-cover'),badge(row.language));
   const button=element('button','compare-button','Fiyatları karşılaştır');button.type='button';button.addEventListener('click',()=>openDetails(row.edition_id));
   const title=element('h3','card-title',row.name);const meta=element('p','card-meta',row.offers.length+' mağazada');
   const prices=element('div','card-price-row');prices.append(element('strong','card-price'+(row.low===null?' small':''),row.low===null?(row.stockCount?'Fiyat belirtilmemiş':'Stokta teklif yok'):formatPrice(row.low)));
