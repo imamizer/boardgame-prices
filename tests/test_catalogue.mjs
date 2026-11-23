@@ -24,3 +24,9 @@ test('stock-out and removed listings form a dedicated feed without duplicate lis
   assert.equal(feedEvents(updates,'new_product').length,1);
   assert.equal(feedEvents(updates,'price_down').length,0);
 });
+
+test('deal feed excludes unavailable offers even in older JSON snapshots',()=>{
+  const base={store:'a',product_id:1,kind:'price_down',detected_at:'2026-11-23T06:00:00Z'};
+  const result=feedEvents([{...base,availability:'out_of_stock'},{...base,product_id:2,availability:'in_stock'}],'price_down');
+  assert.deepEqual(result.map(event=>event.product_id),[2]);
+});

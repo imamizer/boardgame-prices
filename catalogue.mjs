@@ -65,7 +65,7 @@ export function validateCatalog(data){
 export function feedEvents(updates,group){
   const kinds=group==='unavailable'?['stock_out','removed_from_listing']:[group];
   const seen=new Set();
-  return updates.filter(event=>kinds.includes(event.kind)).sort((a,b)=>Date.parse(b.detected_at)-Date.parse(a.detected_at)||Number(b.kind==='removed_from_listing')-Number(a.kind==='removed_from_listing')).filter(event=>{
+  return updates.filter(event=>kinds.includes(event.kind)&&(event.kind!=='price_down'||event.availability==='in_stock')).sort((a,b)=>Date.parse(b.detected_at)-Date.parse(a.detected_at)||Number(b.kind==='removed_from_listing')-Number(a.kind==='removed_from_listing')).filter(event=>{
     // A disappearing listing can generate both stock and removal events in one run.
     const key=`${event.store}:${event.product_id}`;
     if(seen.has(key))return false;seen.add(key);return true;
