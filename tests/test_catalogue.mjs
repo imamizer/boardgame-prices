@@ -35,3 +35,11 @@ test('image sources reject unsafe/mixed-content URLs and deduplicate fallbacks',
   assert.deepEqual(imageSources({image_url:'https://cdn.example/cover.webp',image_fallback_urls:['https://cdn.example/cover.webp','javascript:bad','http://insecure.example/a','https://other.example/cover.webp']}),['https://cdn.example/cover.webp','https://other.example/cover.webp']);
   assert.deepEqual(imageSources({image_url:'data:image/svg+xml,bad',image_fallback_urls:'invalid'}),[]);
 });
+
+test('arrivals include sales releases and restocks without treating them as new listings',()=>{
+  const base={store:'a',url:'https://a.example/game',name:'Ark Nova',detected_at:'2026-11-24T16:33:54Z',availability:'in_stock'};
+  const updates=[{...base,product_id:1,kind:'became_available'},{...base,product_id:2,kind:'back_in_stock'},{...base,product_id:3,kind:'new_product'}];
+  assert.equal(validateCatalog({rows,stores,updates,metadata:{schema_version:1,exported_at:base.detected_at}}).updates.length,3);
+  assert.deepEqual(new Set(feedEvents(updates,'new_product').map(e=>e.kind)),new Set(['became_available','back_in_stock','new_product']));
+  assert.equal(feedEvents([{...updates[0],availability:'coming_soon'}],'new_product').length,0);
+});

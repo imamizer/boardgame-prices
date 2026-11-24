@@ -44,13 +44,13 @@ function eventCard(event){
     price.append(element('span','discount-badge',`%${percent} düşüş`),element('span','old-price',formatPrice(event.old_price_minor)));
   }else if(['stock_out','removed_from_listing'].includes(event.kind)){
     price.append(element('span','unavailable-badge',event.kind==='removed_from_listing'?'Listeden kaldırıldı':'Stok tükendi'),element('span','last-price-label','Son görülen fiyat'));
-  }else price.append(element('span','new-badge','Yeni eklendi'));
+  }else price.append(element('span','new-badge',event.kind==='back_in_stock'?'Yeniden stokta':event.kind==='became_available'?'Satışa açıldı':'Yeni ilan'));
   price.append(element('strong','card-price',formatPrice(event.price_minor)));
   card.append(cover(event,'feed-cover'),body,price);return card;
 }
 
 function renderFeed(){
-  for(const [kind,target,count,empty] of [['new_product','new-products','new-count','Bu kontrollerde yeni bir ürün bulunmadı.'],['price_down','price-drops','deal-count','Bu kontrollerde fiyat düşüşü bulunmadı.'],['unavailable','unavailable-products','unavailable-count','Bu kontrollerde tükenen veya kaldırılan ilan bulunmadı.']]){
+  for(const [kind,target,count,empty] of [['new_product','new-products','new-count','Bu kontrollerde yeni gelen veya yeniden stoklanan ürün bulunmadı.'],['price_down','price-drops','deal-count','Bu kontrollerde fiyat düşüşü bulunmadı.'],['unavailable','unavailable-products','unavailable-count','Bu kontrollerde tükenen veya kaldırılan ilan bulunmadı.']]){
     const events=feedEvents(data.updates,kind);$(count).textContent=events.length;$(target).replaceChildren();
     if(events.length){for(const event of events.slice(0,feedLimits[kind]))$(target).append(eventCard(event));if(events.length>feedLimits[kind]){const more=element('button','feed-more','Daha fazla göster');more.type='button';more.addEventListener('click',()=>{feedLimits[kind]+=12;renderFeed();});$(target).append(more);}}
     else{const box=element('div','empty-feed');const content=element('div');content.append(element('strong','',empty),element('p','','Tüm oyunları arayabilir veya kataloğu mağazalara göre filtreleyebilirsin.'));box.append(element('span','empty-symbol','◇'),content);$(target).append(box);}
