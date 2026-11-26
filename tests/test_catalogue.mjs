@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {decorate,feedEvents,filterCatalogue,imageSources,fold,minor,readState,safeUrl,stateSearch,validateCatalog} from '../catalogue.mjs';
+import {FEED_BATCH_SIZE,decorate,feedEvents,filterCatalogue,imageSources,fold,minor,readState,safeUrl,stateSearch,validateCatalog} from '../catalogue.mjs';
 const stores=[{code:'a',name:'A'},{code:'b',name:'B'}];
 const rows=[{edition_id:1,name:'İstanbul Alhambra',language:'TR',currency:'TRY',product_type:'game',a_price:'100.00',a_stock:'in_stock',a_url:'https://a.example/1',b_price:'50.00',b_stock:'out_of_stock',b_url:'https://b.example/1'},
 {edition_id:2,name:'İstanbul Alhambra',language:'EN',currency:'TRY',product_type:'game',a_price:'80.00',a_stock:'out_of_stock',a_url:'https://a.example/2'},
@@ -42,4 +42,26 @@ test('arrivals include sales releases and restocks without treating them as new 
   assert.equal(validateCatalog({rows,stores,updates,metadata:{schema_version:1,exported_at:base.detected_at}}).updates.length,3);
   assert.deepEqual(new Set(feedEvents(updates,'new_product').map(e=>e.kind)),new Set(['became_available','back_in_stock','new_product']));
   assert.equal(feedEvents([{...updates[0],availability:'coming_soon'}],'new_product').length,0);
+});
+
+test('historical deals stay hidden after a stock-out or a price increase',()=>{
+  const base={kind:'price_down',product_id:1,store:'a',detected_at:'2026-11-25T06:00:00Z',availability:'in_stock',price_minor:8000,current_is_listed:true,current_availability:'in_stock',current_price_minor:8000};
+  assert.equal(feedEvents([base],'price_down').length,1);
+  assert.equal(feedEvents([{...base,current_availability:'out_of_stock'}],'price_down').length,0);
+  assert.equal(feedEvents([{...base,current_is_listed:false}],'price_down').length,0);
+  assert.equal(feedEvents([{...base,current_price_minor:9000}],'price_down').length,0);
+  assert.equal(feedEvents([{...base,current_price_minor:null}],'price_down').length,0);
+});
+test('old arrivals remain news but recovered stock-outs leave the unavailable feed',()=>{
+  const base={product_id:1,store:'a',detected_at:'2026-11-25T06:00:00Z',availability:'in_stock',current_is_listed:true,current_availability:'out_of_stock'};
+  assert.equal(feedEvents([{...base,kind:'became_available'}],'new_product').length,1);
+  assert.equal(feedEvents([{...base,kind:'stock_out',availability:'out_of_stock',current_availability:'in_stock'}],'unavailable').length,0);
+  assert.equal(feedEvents([{...base,kind:'removed_from_listing',current_is_listed:false}],'unavailable').length,1);
+});
+test('recent feeds keep the newest event per listing in 12-item batches',()=>{
+  const updates=Array.from({length:27},(_,i)=>({event_id:String(i),product_id:i,store:'a',kind:'new_product',availability:'in_stock',detected_at:'2026-11-25T06:00:00Z'}));
+  updates.push({...updates[0],event_id:'newer',detected_at:'2026-11-27T06:00:00Z'});
+  const feed=feedEvents(updates,'new_product');assert.equal(feed.length,27);
+  assert.equal(feed[0].event_id,'newer');assert.equal(FEED_BATCH_SIZE,12);
+  assert.equal(feed.slice(0,FEED_BATCH_SIZE).length,12);assert.equal(feed.slice(0,2*FEED_BATCH_SIZE).length,24);
 });

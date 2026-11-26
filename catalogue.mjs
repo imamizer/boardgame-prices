@@ -62,10 +62,22 @@ export function validateCatalog(data){
   return data;
 }
 
+export const FEED_BATCH_SIZE=12;
+export function isRelevantNews(event,group){
+  const current=event.current_availability??event.availability;
+  if(group==='price_down'){
+    if(event.current_is_listed===false||current!=='in_stock')return false;
+    if(Object.hasOwn(event,'current_price_minor')&&(event.current_price_minor===null||event.current_price_minor>event.price_minor))return false;
+  }
+  if(group==='unavailable'&&Object.hasOwn(event,'current_is_listed')){
+    if(event.current_is_listed&&current!=='out_of_stock')return false;
+  }
+  return true;
+}
 export function feedEvents(updates,group){
   const kinds=group==='unavailable'?['stock_out','removed_from_listing']:group==='new_product'?['new_product','became_available','back_in_stock']:[group];
   const seen=new Set();
-  return updates.filter(event=>kinds.includes(event.kind)&&(!['price_down','back_in_stock','became_available'].includes(event.kind)||event.availability==='in_stock')).sort((a,b)=>Date.parse(b.detected_at)-Date.parse(a.detected_at)||Number(b.kind==='removed_from_listing')-Number(a.kind==='removed_from_listing')).filter(event=>{
+  return updates.filter(event=>kinds.includes(event.kind)&&isRelevantNews(event,group)&&(!['price_down','back_in_stock','became_available'].includes(event.kind)||event.availability==='in_stock')).sort((a,b)=>Date.parse(b.detected_at)-Date.parse(a.detected_at)||Number(b.kind==='removed_from_listing')-Number(a.kind==='removed_from_listing')).filter(event=>{
     // A disappearing listing can generate both stock and removal events in one run.
     const key=`${event.store}:${event.product_id}`;
     if(seen.has(key))return false;seen.add(key);return true;
